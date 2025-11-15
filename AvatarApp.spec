@@ -5,7 +5,7 @@ a = Analysis(
     ['main.py'],
     pathex=[],
     binaries=[],
-    datas=[('assets', 'assets'), ('index.html', '.'), ('config.json', '.'), ('icon.ico', '.'), ('C:\\Users\\foxy8\\OneDrive\\Documents\\dev\\AvatarUI\\env\\Lib\\site-packages\\pvrecorder\\lib\\windows\\amd64\\libpv_recorder.dll', 'pvrecorder/lib/windows/amd64/')],
+    datas=[('assets', 'assets'), ('index.html', '.'), ('config.json', '.'), ('icon.ico', '.'), ('lib/windows/amd64/libpv_recorder.dll', 'pvrecorder/lib/windows/amd64/')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

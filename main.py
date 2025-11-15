@@ -10,7 +10,9 @@ import threading
 import time
 import random
 
-from PySide6.QtWidgets import QApplication, QWidget, QColorDialog
+from PySide6.QtWidgets import QApplication, QWidget, QColorDialog, QSystemTrayIcon, QMenu
+from PySide6.QtGui import QIcon, QAction
+from PySide6.QtGui import QCloseEvent
 from ui_form import Ui_Widget
 
 STATE = {
@@ -177,6 +179,31 @@ class MainApp(QWidget):
 
         self.setWindowTitle("webst")
 
+
+        # -----------------------------
+        #   System Tray
+        # -----------------------------
+        self.tray = QSystemTrayIcon(self)
+        self.tray.setIcon(QIcon("icon.png"))  # поставь свой значок PNG
+        self.tray.setVisible(True)
+
+        # Меню трея
+        tray_menu = QMenu()
+
+        show_action = QAction("Открыть", self)
+        show_action.triggered.connect(self.show_window)
+        tray_menu.addAction(show_action)
+
+        quit_action = QAction("Выход", self)
+        quit_action.triggered.connect(self.exit_app)
+        tray_menu.addAction(quit_action)
+
+        self.tray.setContextMenu(tray_menu)
+
+        # Двойной клик по иконке — открыть окно
+        self.tray.activated.connect(self.on_tray_activated)
+
+
         self.obs_link = self.ui.lineEdit
         self.avatar_box = self.ui.comboBox
         self.mic_box = self.ui.comboBox_2
@@ -197,6 +224,27 @@ class MainApp(QWidget):
 
         self.load_microphoes()
 
+    def show_window(self):
+        self.show()
+        self.activateWindow()
+
+    def exit_app(self):
+        self.tray.setVisible(False)
+        QApplication.quit()
+
+    def on_tray_activated(self, reason):
+        if reason == QSystemTrayIcon.DoubleClick:
+            self.show_window()
+    
+    def closeEvent(self, event: QCloseEvent):
+        event.ignore()
+        self.hide()
+        self.tray.showMessage(
+            "Avatar UI",
+            "Приложение свернуто в трей",
+            QSystemTrayIcon.Information,
+            2000
+        )
 
     # ================================================================
     #   ВЫБОР ЦВЕТА ФОНА

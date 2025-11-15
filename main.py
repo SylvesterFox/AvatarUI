@@ -23,15 +23,44 @@ STATE = {
 }
 
 WS_CLIENTS = set()
+CONFIG_FILE = "config.json"
+
+def save_config():
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(STATE, f, ensure_ascii=False, indent=4)
+
+def load_config():
+    global STATE
+    if os.path.exists(CONFIG_FILE):
+        try:
+            with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+                loaded = json.load(f)
+                STATE.update(loaded)
+            print("[CONFIG] Loaded config.json")
+        except Exception as e:
+            print("[CONFIG] Failed to load config:", e)
 
 # -----------------------------------------------------------
 #     WEBSOCKET SERVER (для OBS)
 # -----------------------------------------------------------
-async def broadcast(data):
+async def broadcast(msg: dict):
     if not WS_CLIENTS:
         return
-    msg = json.dumps(data)
-    await asyncio.gather(*[c.send(msg) for c in WS_CLIENTS])
+    
+    dead = []
+    for ws in list(WS_CLIENTS):
+        try:
+            await ws.send(json.dumps(msg))
+        except Exception as e:
+            print(f"WS send failed: {e}")
+            dead.append(ws)
+    
+    for ws in dead:
+        try:
+            WS_CLIENTS.remove(ws)
+            await ws.close()
+        except:
+            pass
 
 
 async def ws_handler(ws):
@@ -86,38 +115,42 @@ async def audio_loop():
     last_blink = time.time()
 
     while True:
-        frame = recorder.read()
+        try:
+            frame = recorder.read()
 
-        # ---------------- AMPLITUDE ----------------
-        minimal = min(frame)
-        maximum = max(frame)
-        amplitude = maximum - minimal
+            # ---------------- AMPLITUDE ----------------
+            minimal = min(frame)
+            maximum = max(frame)
+            amplitude = maximum - minimal
 
-        # ---------------- EMOTION LOGIC ------------
-        sens = STATE["sensitivity"]
-        emotion = 0
+            # ---------------- EMOTION LOGIC ------------
+            sens = STATE["sensitivity"]
+            emotion = 0
 
-        if amplitude > sens * 20: emotion = 1
-        if amplitude > sens * 40: emotion = 2
-        if amplitude > sens * 60: emotion = 3
-        if amplitude > sens * 80: emotion = 4
-        if amplitude > sens * 120: emotion = 5
+            if amplitude > sens * 20: emotion = 1
+            if amplitude > sens * 40: emotion = 2
+            if amplitude > sens * 60: emotion = 3
+            if amplitude > sens * 80: emotion = 4
+            if amplitude > sens * 120: emotion = 5
 
-        STATE["emotion"] = emotion
+            STATE["emotion"] = emotion
 
-        # ---------------- BLINK --------------------
-        if time.time() - last_blink > random.randint(2, 5):
-            eyes_stage = 1
-            last_blink = time.time()
+            # ---------------- BLINK --------------------
+            if time.time() - last_blink > random.randint(2, 5):
+                eyes_stage = 1
+                last_blink = time.time()
 
-        if eyes_stage > 0:
-            eyes_stage += 1
-            if eyes_stage > 7:
-                eyes_stage = 0
+            if eyes_stage > 0:
+                eyes_stage += 1
+                if eyes_stage > 7:
+                    eyes_stage = 0
 
-        STATE["eyes"] = eyes_stage
+            STATE["eyes"] = eyes_stage
 
-        await broadcast({"emotion": emotion, "eyes": eyes_stage})
+            await broadcast({"emotion": emotion, "eyes": eyes_stage})
+        except Exception as e:
+            print("audio_loop error:", e)
+
         await asyncio.sleep(0.033)
 
 
@@ -158,7 +191,7 @@ class MainApp(QWidget):
 
         self.ui.frameColor.setStyleSheet("background-color: #000000;")
         self.ui.lineEdit.setReadOnly(True)
-        self.obs_link.setText("http://loaclhost:5500/index.html")
+        self.obs_link.setText("http://loaclhost:5500/")
 
         self.load_avaters()
 
@@ -205,9 +238,32 @@ class MainApp(QWidget):
         STATE["background"] = color
         STATE["sensitivity"] = sensitivity
 
+        save_config()
+        print("[CONFIG] Saved")
+
+    def apply_loaded_config(self):
+        # фон
+        self.ui.colorHex.setText(STATE["background"])
+        self.ui.frameColor.setStyleSheet(f"background-color: {STATE['background']};")
+
+        # аватар
+        avatar_folder = STATE["avatar"].replace("assets/", "")
+        index = self.avatar_box.findText(avatar_folder)
+        if index >= 0:
+            self.avatar_box.setCurrentIndex(index)
+
+        # микрофон
+        if 0 <= STATE["device"] < self.mic_box.count():
+            self.mic_box.setCurrentIndex(STATE["device"])
+
+        # чувствительность
+        self.sens_slider.setValue(STATE["sensitivity"])
+
 if __name__ == "__main__":
+    load_config()
     threading.Thread(target=start_asyncio_servers, daemon=True).start()
     app = QApplication(sys.argv)
     widget = MainApp()
+    widget.apply_loaded_config()
     widget.show()
     sys.exit(app.exec())

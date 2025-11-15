@@ -1,7 +1,7 @@
 {
     "avatar": "assets/DragofoxV1",
     "device": 0,
-    "sensitivity": 94,
+    "sensitivity": 98,
     "background": "#251eff",
     "face_frames": [
         "face_0.png",
@@ -17,13 +17,9 @@
         "eyes_0.png",
         "eyes_1.png",
         "eyes_2.png",
-        "eyes_3.png",
-        "eyes_4.png",
-        "eyes_5.png",
-        "eyes_6.png",
-        "eyes_7.png"
+        "eyes_3.png"
     ],
-    "eyes_count": 8,
+    "eyes_count": 4,
     "emotion": 0,
     "eyes": 0,
     "avatar_path": "assets/DragofoxV1"

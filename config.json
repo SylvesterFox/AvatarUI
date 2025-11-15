@@ -1,8 +1,30 @@
 {
-    "avatar": "assets/PWgood",
+    "avatar": "assets/DragofoxV1",
     "device": 0,
-    "sensitivity": 77,
-    "background": "#00ff15",
-    "emotion": 1,
-    "eyes": 0
+    "sensitivity": 94,
+    "background": "#251eff",
+    "face_frames": [
+        "face_0.png",
+        "face_1.png",
+        "face_2.png",
+        "face_3.png",
+        "face_4.png",
+        "face_5.png",
+        "face_6.png"
+    ],
+    "face_count": 7,
+    "eyes_frames": [
+        "eyes_0.png",
+        "eyes_1.png",
+        "eyes_2.png",
+        "eyes_3.png",
+        "eyes_4.png",
+        "eyes_5.png",
+        "eyes_6.png",
+        "eyes_7.png"
+    ],
+    "eyes_count": 8,
+    "emotion": 0,
+    "eyes": 0,
+    "avatar_path": "assets/DragofoxV1"
 }

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Avatar</title>
+<style>
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: transparent;
+    }
+     #eyes {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 583px;
+        height: 699px;
+        z-index: 1;
+        pointer-events: none;
+    }
+
+    /* Аватар — верхний слой */
+    #avatar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 583px;
+        height: 699px;
+        z-index: 2;  /* выше глаз */
+        pointer-events: none;
+    }
+</style>
+</head>
+<body>
+
+<img id="avatar" src="" />
+<img id="eyes" src="" />
+
+<script>
+let ws;
+let state = {
+    avatar: "assets/default",
+    emotion: 0,
+    eyes: 0,
+    background: "#00ff00"
+};
+
+let cache = {};
+let lastFace = "";
+let lastEyes = "";
+
+function connectWS() {
+    ws = new WebSocket("ws://localhost:8765");
+    ws.onopen = () => console.log("WS connected");
+
+    ws.onmessage = (msg) => {
+        let data = JSON.parse(msg.data);
+
+        // обновляем состояние
+        Object.assign(state, data);
+
+        updateAvatar();
+    };
+
+    ws.onclose = () => {
+        console.log("WS closed. Reconnect...");
+        setTimeout(connectWS, 1000);
+    };
+}
+
+function preloadImage(src) {
+    return new Promise((resolve) => {
+        if (cache[src]) {
+            resolve(cache[src]);
+            return;
+        }
+        const img = new Image();
+        img.onload = () => {
+            cache[src] = img;
+            resolve(img);
+        };
+        img.src = src;
+    });
+}
+
+async function updateAvatar() {
+    const faceSrc = `${state.avatar}/face_${state.emotion}.png`;
+    const eyesSrc = `${state.avatar}/eyes_${state.eyes}.png`;
+
+    // фон
+    document.body.style.background = state.background;
+
+    // лицо
+    if (faceSrc !== lastFace) {
+        await preloadImage(faceSrc);
+        document.getElementById("avatar").src = cache[faceSrc].src;
+        lastFace = faceSrc;
+    }
+
+    // глаза
+    if (eyesSrc !== lastEyes) {
+        await preloadImage(eyesSrc);
+        document.getElementById("eyes").src = cache[eyesSrc].src;
+        lastEyes = eyesSrc;
+    }
+}
+
+
+connectWS();
+</script>
+</body>
+</html>
